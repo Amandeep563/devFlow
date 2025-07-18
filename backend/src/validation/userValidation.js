@@ -5,7 +5,7 @@ export const registerSchema = z.object({
   name: z
     .string()
     .min(2, "Name must be at least 2 characters")
-    .max(50, "Name cannot exceed 50 characters")
+    .max(20, "Name cannot exceed 20 characters")
     .trim(), // Removes spaces from beginning/end
 
   email: z
