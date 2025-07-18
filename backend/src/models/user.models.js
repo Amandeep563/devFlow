@@ -5,17 +5,20 @@ const userSchema = new Schema(
     name: {
       type: String,
       required: [true, "Name is Required"],
-      maxlenght: 10,
+      maxlength: 20,
+      trim: true,
     },
     email: {
       type: String,
       required: [true, "Email is Required"],
       unique: true,
+      lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
       required: [true, "Password is Required"],
-      maxlenght: 6,
+      minlenght: 6,
     },
   },
   { timestamps: true }

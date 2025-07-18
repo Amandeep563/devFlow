@@ -2,57 +2,96 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/user.models.js";
 import generateToken from "../utils/generateToken.js";
 
-//we have to create two things register , login
-
-//register
+// Register controller
 export const register = async (req, res) => {
+  // 🔥 req.body is already validated and cleaned by Zod!
   const { name, email, password } = req.body;
 
   try {
-    const existed = await User.findOne({ email });
-    if (existed) {
-      return res.status(400).json({ message: "user already existed" });
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email",
+      });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    // Hash password with higher salt rounds for better security
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({ name, email, password: hash });
+    // Create new user
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
 
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    // Send success response
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id),
+      success: true,
+      message: "User registered successfully",
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token,
+      },
     });
   } catch (error) {
-    console.log("Register Error ", error);
-    res.status(500).json({ message: "server Error" });
+    console.error("Registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during registration",
+    });
   }
 };
 
-//login
+// Login controller
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid person" });
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id),
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token,
+      },
     });
   } catch (error) {
-    console.log("Login error ", error);
-    res.status(500).json({ message: "server error" });
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during login",
+    });
   }
 };
